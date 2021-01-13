@@ -24,41 +24,45 @@ pub fn sublist<T: PartialEq + Ord + Display + Debug>(
 
     let first_list: Vec<_> = _first_list.iter().collect();
     let second_list: Vec<_> = _second_list.iter().collect();
-    if first_list.len() == second_list.len() {
-        if first_list.eq(&second_list) {
-            Comparison::Equal
-        } else {
-            Comparison::Unequal
-        }
-    } else if first_list.len() < second_list.len() {
-        let subtract = second_list.len() - first_list.len();
-        for i in 0..subtract + 1 {
-            if second_list
-                .iter()
-                .skip(i)
-                .take(first_list.len())
-                .cloned()
-                .collect::<Vec<_>>()
-                .eq(&first_list)
-            {
-                return Comparison::Sublist;
+
+    match first_list.len().cmp(&second_list.len()) {
+        std::cmp::Ordering::Equal => {
+            if first_list.eq(&second_list) {
+                Comparison::Equal
+            } else {
+                Comparison::Unequal
             }
         }
-        Comparison::Unequal
-    } else {
-        let subtract = first_list.len() - second_list.len();
-        for i in 0..subtract + 1 {
-            if first_list
-                .iter()
-                .skip(i)
-                .take(second_list.len())
-                .cloned()
-                .collect::<Vec<_>>()
-                .eq(&second_list)
-            {
-                return Comparison::Superlist;
+        std::cmp::Ordering::Less => {
+            if is_sublist(first_list, second_list) {
+                Comparison::Sublist
+            } else {
+                Comparison::Unequal
             }
         }
-        Comparison::Unequal
+        std::cmp::Ordering::Greater => {
+            if is_sublist(second_list, first_list) {
+                Comparison::Superlist
+            } else {
+                Comparison::Unequal
+            }
+        }
     }
+}
+
+fn is_sublist<T: PartialEq>(smaller_list: Vec<&T>, larger_list: Vec<&T>) -> bool {
+    let subtract = larger_list.len() - smaller_list.len();
+    for i in 0..subtract + 1 {
+        if larger_list
+            .iter()
+            .skip(i)
+            .cloned()
+            .take(smaller_list.len())
+            .collect::<Vec<_>>()
+            .eq(&smaller_list)
+        {
+            return true;
+        }
+    }
+    false
 }
