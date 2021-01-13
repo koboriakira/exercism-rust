@@ -28,59 +28,25 @@ fn round_second_decimal_place(f: f64) -> f64 {
 }
 
 pub trait Planet {
+    const RATIO: f64 = 1.0;
     fn years_during(d: &Duration) -> f64 {
-        round_second_decimal_place(d.earth_age())
+        round_second_decimal_place(d.earth_age() / Self::RATIO)
     }
 }
 
-pub struct Mercury;
-pub struct Venus;
-pub struct Earth;
-pub struct Mars;
-pub struct Jupiter;
-pub struct Saturn;
-pub struct Uranus;
-pub struct Neptune;
-
-impl Planet for Mercury {
-    fn years_during(d: &Duration) -> f64 {
-        round_second_decimal_place(d.earth_age() / 0.240_846_7)
-    }
+macro_rules! create_planet {
+    ($planet_name: ident, $ratio:expr) => {
+        pub struct $planet_name;
+        impl Planet for $planet_name {
+            const RATIO: f64 = $ratio;
+        }
+    };
 }
-
-impl Planet for Venus {
-    fn years_during(d: &Duration) -> f64 {
-        round_second_decimal_place(d.earth_age() / 0.615_197_26)
-    }
-}
-
-impl Planet for Earth {
-    fn years_during(d: &Duration) -> f64 {
-        round_second_decimal_place(d.earth_age())
-    }
-}
-impl Planet for Mars {
-    fn years_during(d: &Duration) -> f64 {
-        round_second_decimal_place(d.earth_age() / 1.8808158)
-    }
-}
-impl Planet for Jupiter {
-    fn years_during(d: &Duration) -> f64 {
-        round_second_decimal_place(d.earth_age() / 11.862615)
-    }
-}
-impl Planet for Saturn {
-    fn years_during(d: &Duration) -> f64 {
-        round_second_decimal_place(d.earth_age() / 29.447498)
-    }
-}
-impl Planet for Uranus {
-    fn years_during(d: &Duration) -> f64 {
-        round_second_decimal_place(d.earth_age() / 84.016846)
-    }
-}
-impl Planet for Neptune {
-    fn years_during(d: &Duration) -> f64 {
-        round_second_decimal_place(d.earth_age() / 164.79132)
-    }
-}
+create_planet!(Mercury, 0.2408467);
+create_planet!(Venus, 0.61519726);
+create_planet!(Earth, 1.0);
+create_planet!(Mars, 1.8808158);
+create_planet!(Jupiter, 11.862615);
+create_planet!(Saturn, 29.447498);
+create_planet!(Uranus, 84.016846);
+create_planet!(Neptune, 164.79132);
