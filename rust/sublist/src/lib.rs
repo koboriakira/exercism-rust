@@ -50,19 +50,15 @@ pub fn sublist<T: PartialEq + Ord + Display + Debug>(
     }
 }
 
-fn is_sublist<T: PartialEq>(smaller_list: Vec<&T>, larger_list: Vec<&T>) -> bool {
-    let subtract = larger_list.len() - smaller_list.len();
-    for i in 0..subtract + 1 {
-        if larger_list
-            .iter()
-            .skip(i)
-            .cloned()
-            .take(smaller_list.len())
-            .collect::<Vec<_>>()
-            .eq(&smaller_list)
-        {
-            return true;
-        }
-    }
-    false
+fn is_sublist<T: PartialEq + Debug>(smaller_list: Vec<&T>, larger_list: Vec<&T>) -> bool {
+    // for window_list in larger_list.windows(smaller_list.len()) {
+    //     if window_list.eq(&smaller_list) {
+    //         return true;
+    //     }
+    // }
+    // false
+    larger_list
+        .windows(smaller_list.len())
+        .find(|windows| windows.eq(&smaller_list))
+        .is_some()
 }
