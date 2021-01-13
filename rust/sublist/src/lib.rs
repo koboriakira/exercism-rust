@@ -22,19 +22,16 @@ pub fn sublist<T: PartialEq + Ord + Display + Debug>(
         return Comparison::Superlist;
     }
 
-    let first_list: Vec<_> = _first_list.iter().collect();
-    let second_list: Vec<_> = _second_list.iter().collect();
-
-    if first_list.len() <= second_list.len() {
-        if first_list.eq(&second_list) {
+    if _first_list.len() <= _second_list.len() {
+        if _first_list.eq(_second_list) {
             Comparison::Equal
-        } else if is_sublist(first_list, second_list) {
+        } else if is_sublist(_first_list, _second_list) {
             Comparison::Sublist
         } else {
             Comparison::Unequal
         }
     } else {
-        if is_sublist(second_list, first_list) {
+        if is_sublist(_second_list, _first_list) {
             Comparison::Superlist
         } else {
             Comparison::Unequal
@@ -42,7 +39,7 @@ pub fn sublist<T: PartialEq + Ord + Display + Debug>(
     }
 }
 
-fn is_sublist<T: PartialEq + Debug>(smaller_list: Vec<&T>, larger_list: Vec<&T>) -> bool {
+fn is_sublist<T: PartialEq>(smaller_list: &[T], larger_list: &[T]) -> bool {
     larger_list
         .windows(smaller_list.len())
         .find(|windows| windows.eq(&smaller_list))
