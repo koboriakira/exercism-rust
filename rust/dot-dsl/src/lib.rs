@@ -1,3 +1,14 @@
+macro_rules! with_attrs {
+    () => {
+        pub fn with_attrs(mut self, _attrs: &[(&str, &str)]) -> Self {
+            for (key, value) in _attrs {
+                self.attrs.insert(key.to_string(), value.to_string());
+            }
+            self
+        }
+    };
+}
+
 pub mod graph {
     use std::collections::HashMap;
 
@@ -27,12 +38,7 @@ pub mod graph {
             self
         }
 
-        pub fn with_attrs(mut self, _attrs: &[(&str, &str)]) -> Self {
-            for (key, value) in _attrs {
-                self.attrs.insert(key.to_string(), value.to_string());
-            }
-            self
-        }
+        with_attrs!();
 
         pub fn get_node(&self, name: &str) -> Result<&Node, &'static str> {
             let node = self.nodes.iter().find(|&n| n.name == name);
@@ -62,12 +68,7 @@ pub mod graph {
                     }
                 }
 
-                pub fn with_attrs(mut self, _attrs: &[(&str, &str)]) -> Self {
-                    for (key, value) in _attrs {
-                        self.attrs.insert(key.to_string(), value.to_string());
-                    }
-                    self
-                }
+                with_attrs!();
 
                 pub fn get_attr(&self, key: &str) -> Option<&str> {
                     let attr = self.attrs.iter().find(|(k, _)| k.eq(&key));
@@ -97,12 +98,7 @@ pub mod graph {
                         attrs: HashMap::new(),
                     }
                 }
-                pub fn with_attrs(mut self, _attrs: &[(&str, &str)]) -> Self {
-                    for (key, value) in _attrs {
-                        self.attrs.insert(key.to_string(), value.to_string());
-                    }
-                    self
-                }
+                with_attrs!();
             }
         }
     }
