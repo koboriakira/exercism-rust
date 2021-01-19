@@ -29,11 +29,6 @@ impl Queen {
 
     pub fn can_attack(&self, other: &Queen) -> bool {
         let diff = self.position.diff(&(other.position));
-        match (diff.0, diff.1, diff.0.abs() == diff.1.abs()) {
-            (0, _, _) => true,
-            (_, 0, _) => true,
-            (_, _, true) => true,
-            (_, _, _) => false,
-        }
+        diff.0 == 0 || diff.1 == 0 || diff.0.abs() == diff.1.abs()
     }
 }
