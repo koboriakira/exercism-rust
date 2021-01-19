@@ -2,3 +2,6 @@
 edition = "2018"
 name = "robot-simulator"
 version = "2.2.0"
+
+[dependencies]
+once_cell = "1.5.2"
