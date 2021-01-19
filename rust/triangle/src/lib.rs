@@ -1,13 +1,17 @@
-pub struct Triangle {
+use std::ops::Add;
+pub struct Triangle<T> {
     // a is the longest, and b is longer than c.
-    a: u64,
-    b: u64,
-    c: u64,
+    a: T,
+    b: T,
+    c: T,
 }
 
-impl Triangle {
-    pub fn build(sides: [u64; 3]) -> Option<Triangle> {
-        if sides.iter().any(|s| *s <= 0) {
+impl<T> Triangle<T> {
+    pub fn build(sides: [T; 3]) -> Option<Triangle<T>>
+    where
+        T: PartialOrd<f64> + PartialOrd + Copy + Add<T, Output = T>,
+    {
+        if sides.iter().any(|s| *s <= 0.0) {
             None
         } else {
             let mut sides = sides;
