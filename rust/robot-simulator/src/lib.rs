@@ -21,50 +21,78 @@ impl Robot {
         Robot { x, y, d }
     }
 
-    pub fn turn_right(mut self) -> Self {
+    pub fn turn_right(self) -> Self {
         match self.d {
-            Direction::North => self.d = Direction::East,
-            Direction::East => self.d = Direction::South,
-            Direction::South => self.d = Direction::West,
-            Direction::West => self.d = Direction::North,
-        };
-        self
-    }
-
-    pub fn turn_left(mut self) -> Self {
-        match self.d {
-            Direction::North => self.d = Direction::West,
-            Direction::West => self.d = Direction::South,
-            Direction::South => self.d = Direction::East,
-            Direction::East => self.d = Direction::North,
-        };
-        self
-    }
-
-    pub fn advance(mut self) -> Self {
-        match self.d {
-            Direction::North => self.y += 1,
-            Direction::East => self.x += 1,
-            Direction::South => self.y -= 1,
-            Direction::West => self.x -= 1,
-        };
-        self
-    }
-
-    pub fn instructions(mut self, instructions: &str) -> Self {
-        for i in instructions.chars() {
-            self = self.instruction(&i);
+            Direction::North => Self {
+                d: Direction::East,
+                ..self
+            },
+            Direction::East => Self {
+                d: Direction::South,
+                ..self
+            },
+            Direction::South => Self {
+                d: Direction::West,
+                ..self
+            },
+            Direction::West => Self {
+                d: Direction::North,
+                ..self
+            },
         }
-        self
     }
 
-    pub fn instruction(self, instruction: &char) -> Self {
-        match instruction {
-            'L' => self.turn_left(),
-            'R' => self.turn_right(),
-            'A' => self.advance(),
-            _ => self,
+    pub fn turn_left(self) -> Self {
+        match self.d {
+            Direction::North => Self {
+                d: Direction::West,
+                ..self
+            },
+            Direction::West => Self {
+                d: Direction::South,
+                ..self
+            },
+            Direction::South => Self {
+                d: Direction::East,
+                ..self
+            },
+            Direction::East => Self {
+                d: Direction::North,
+                ..self
+            },
         }
+    }
+
+    pub fn advance(self) -> Self {
+        match self.d {
+            Direction::North => Self {
+                y: self.y + 1,
+                ..self
+            },
+            Direction::East => Self {
+                x: self.x + 1,
+                ..self
+            },
+            Direction::South => Self {
+                y: self.y - 1,
+                ..self
+            },
+            Direction::West => Self {
+                x: self.x - 1,
+                ..self
+            },
+        }
+    }
+
+    pub fn instructions(self, instructions: &str) -> Self {
+        instructions
+            .chars()
+            .fold(self, |robot, instruction| match instruction {
+                'L' => robot.turn_left(),
+                'R' => robot.turn_right(),
+                'A' => robot.advance(),
+                _ => robot,
+            })
     }
 
     pub fn position(&self) -> (i32, i32) {
