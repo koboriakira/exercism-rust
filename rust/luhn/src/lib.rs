@@ -25,14 +25,27 @@ fn sum(code: &str) -> Result<u32, String> {
         }
     }
 
+    // validate(code).and_then(|code| {
+    //     Ok(code
+    //         .chars()
+    //         .filter(|c| c.is_digit(10))
+    //         .rev()
+    //         .map(|c| c.to_digit(10).unwrap())
+    //         .enumerate()
+    //         .map(|(i, d)| double_if_index_is_even(i, d))
+    //         .sum::<u32>())
+    // })
+
     validate(code).and_then(|code| {
-        Ok(code
-            .chars()
-            .filter(|c| c.is_digit(10))
-            .rev()
-            .map(|c| c.to_digit(10).unwrap())
-            .enumerate()
-            .map(|(i, d)| double_if_index_is_even(i, d))
-            .sum::<u32>())
+        let result = code.chars().rev().filter(|c| c.is_digit(10)).try_fold(
+            (0, 0),
+            |(sum, count), c| match (count % 2 != 0, c.to_digit(10)) {
+                (false, Some(digit)) => (sum + digit, count + 1),
+                (true, Some(digit)) if digit < 5 => (sum + digit * 2, count + 1),
+                (true, Some(digit)) if digit >= 5 => (sum + digit * 2 - 9, count + 1),
+                (_, _) => (None, None),
+            },
+        );
+        Ok(result.1)
     })
 }
