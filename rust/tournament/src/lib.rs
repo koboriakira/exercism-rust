@@ -52,52 +52,46 @@ impl SeasonResult {
     }
 }
 
+fn collect_result(match_result: &str) -> (String, String, &str) {
+    let el: Vec<&str> = match_result.split(";").collect();
+    match el[2].eq("loss") {
+        true => return (el[1].to_string(), el[0].to_string(), el[2]),
+        false => return (el[0].to_string(), el[1].to_string(), el[2]),
+    }
+}
+
 pub fn tally(match_results: &str) -> String {
     let mut result_as_team: HashMap<String, SeasonResult> = HashMap::new();
     match match_results.is_empty() {
         true => {}
         false => {
             match_results.split("\n").for_each(|m| {
-                let elements: Vec<&str> = m.split(";").collect();
-                let team_name = elements[0].to_string();
-                let result = elements[2];
-                match result {
-                    "win" => {
+                let (winner, loser, result) = collect_result(m);
+                match result.eq("draw") {
+                    true => {
                         result_as_team
-                            .entry(team_name)
+                            .entry(winner)
+                            .or_insert(SeasonResult::new())
+                            .draw();
+                        result_as_team
+                            .entry(loser)
+                            .or_insert(SeasonResult::new())
+                            .draw();
+                    }
+                    false => {
+                        result_as_team
+                            .entry(winner)
                             .or_insert(SeasonResult::new())
                             .win();
+                        result_as_team
+                            .entry(loser)
+                            .or_insert(SeasonResult::new())
+                            .lose();
                     }
-                    "draw" => result_as_team
-                        .entry(team_name)
-                        .or_insert(SeasonResult::new())
-                        .draw(),
-                    "loss" => result_as_team
-                        .entry(team_name)
-                        .or_insert(SeasonResult::new())
-                        .lose(),
-                    _ => panic!("Illegal result"),
-                };
-                let team_name = elements[1].to_string();
-                match result {
-                    "win" => result_as_team
-                        .entry(team_name)
-                        .or_insert(SeasonResult::new())
-                        .lose(),
-                    "draw" => result_as_team
-                        .entry(team_name)
-                        .or_insert(SeasonResult::new())
-                        .draw(),
-                    "loss" => result_as_team
-                        .entry(team_name)
-                        .or_insert(SeasonResult::new())
-                        .win(),
-                    _ => panic!("Illegal result"),
-                };
+                }
             });
         }
     }
-
     println!("{:?}", result_as_team);
 
     let header = create_header();
