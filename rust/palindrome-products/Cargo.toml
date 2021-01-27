@@ -4,3 +4,4 @@ name = "palindrome-products"
 version = "1.2.0"
 
 [dependencies]
+itertools = "0.10.0"
