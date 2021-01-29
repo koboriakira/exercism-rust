@@ -31,53 +31,24 @@ pub fn encode(n: u64) -> String {
         21..=99 => encode((n / 10) * 10) + "-" + &encode(n % 10),
         100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 => encode(n / 100) + " hundred",
         101..=999 => encode(n / 100) + " hundred " + &encode(n % 100),
-        1000..=999999 => {
-            let thousand = encode(n / 1000) + " thousand";
-            if n % 1000 == 0 {
-                thousand
-            } else {
-                thousand + " " + &encode(n % 1000)
-            }
-        }
-        1_000_000..=999_999_999 => {
-            let million = encode(n / 1_000_000) + " million";
-            if n % 1_000_000 == 0 {
-                million
-            } else {
-                million + " " + &encode(n % 1_000_000)
-            }
-        }
-        1_000_000_000..=999_999_999_999 => {
-            let billion = encode(n / 1_000_000_000) + " billion";
-            if n % 1_000_000_000 == 0 {
-                billion
-            } else {
-                billion + " " + &encode(n % 1_000_000_000)
-            }
-        }
-        1_000_000_000_000..=999_999_999_999_999 => {
-            let trillion = encode(n / 1_000_000_000_000) + " trillion";
-            if n % 1_000_000_000_000 == 0 {
-                trillion
-            } else {
-                trillion + " " + &encode(n % 1_000_000_000_000)
-            }
-        }
+        1_000..=999_999 => large_digit(n, 1000, "thousand"),
+        1_000_000..=999_999_999 => large_digit(n, 1_000_000, "million"),
+        1_000_000_000..=999_999_999_999 => large_digit(n, 1_000_000_000, "billion"),
+        1_000_000_000_000..=999_999_999_999_999 => large_digit(n, 1_000_000_000_000, "trillion"),
         1_000_000_000_000_000..=999_999_999_999_999_999 => {
-            let quadrillion = encode(n / 1_000_000_000_000_000) + " quadrillion";
-            if n % 1_000_000_000_000_000 == 0 {
-                quadrillion
-            } else {
-                quadrillion + " " + &encode(n % 1_000_000_000_000_000)
-            }
+            large_digit(n, 1_000_000_000_000_000, "quadrillion")
         }
         1_000_000_000_000_000_000..=u64::MAX => {
-            let quintillion = encode(n / 1_000_000_000_000_000_000) + " quintillion";
-            if n % 1_000_000_000_000_000_000 == 0 {
-                quintillion
-            } else {
-                quintillion + " " + &encode(n % 1_000_000_000_000_000_000)
-            }
+            large_digit(n, 1_000_000_000_000_000_000, "quintillion")
         }
+    }
+}
+
+fn large_digit(n: u64, digit: u64, digit_name: &str) -> String {
+    let result = encode(n / digit) + " " + digit_name;
+    if n % digit == 0 {
+        result
+    } else {
+        result + " " + &encode(n % digit)
     }
 }

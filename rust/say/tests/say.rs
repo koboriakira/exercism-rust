@@ -130,7 +130,6 @@ fn test_max_i64() {
 }
 
 #[test]
-#[ignore]
 fn test_max_u64() {
     assert_eq!(
         say::encode(18_446_744_073_709_551_615),
