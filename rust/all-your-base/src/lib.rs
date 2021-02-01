@@ -37,10 +37,50 @@ pub enum Error {
 ///    However, your function must be able to process input with leading 0 digits.
 ///
 pub fn convert(number: &[u32], from_base: u32, to_base: u32) -> Result<Vec<u32>, Error> {
-    unimplemented!(
-        "Convert {:?} from base {} to base {}",
-        number,
-        from_base,
-        to_base
-    )
+    let max_num = number.into_iter().max();
+    match (max_num, from_base, to_base) {
+        (_, 0..=1, _) => return Err(Error::InvalidInputBase),
+        (_, _, 0..=1) => return Err(Error::InvalidOutputBase),
+        (Some(max_num), _, _) if max_num >= &from_base => {
+            return Err(Error::InvalidDigit(from_base))
+        }
+        (_, _, _) => {
+            let total = number
+                .into_iter()
+                .rev()
+                .enumerate()
+                .map(|(i, n)| n * from_base.pow(i as u32))
+                .sum::<u32>();
+            println!("total: {}", total);
+
+            let digits = calculate_digit(total, to_base);
+            println!("digits: {}", digits);
+
+            let result = (0..digits)
+                .rev()
+                .fold((total, vec![]), |(rest, mut result), digit| {
+                    let multiply = calculate_multiply(rest, to_base, digit as u32);
+                    result.push(multiply);
+                    (rest - to_base.pow(digit as u32) * multiply, result)
+                });
+            Ok(result.1)
+        }
+    }
+}
+
+fn calculate_digit(num: u32, base: u32) -> usize {
+    let mut pow = 0;
+    while num > base.pow(pow + 1) {
+        pow += 1;
+    }
+    pow += 1;
+    return pow as usize;
+}
+
+fn calculate_multiply(rest: u32, to_base: u32, digit: u32) -> u32 {
+    let mut multiply = 0;
+    while rest >= to_base.pow(digit as u32) * (multiply + 1) {
+        multiply += 1;
+    }
+    multiply
 }
