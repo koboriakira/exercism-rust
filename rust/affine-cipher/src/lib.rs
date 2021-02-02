@@ -26,9 +26,7 @@ fn make_dictionary(
                 false => (b1 as char, b2 as char),
             })
             .collect()),
-        _ => {
-            Err(AffineCipherError::NotCoprime(*a))
-        }
+        _ => Err(AffineCipherError::NotCoprime(*a)),
     }
 }
 
@@ -39,21 +37,12 @@ pub fn encode(plaintext: &str, a: i32, b: i32) -> Result<String, AffineCipherErr
         Ok(plaintext
             .to_ascii_lowercase()
             .chars()
-            .filter_map(|c| match (c.is_ascii_alphabetic(), c.is_numeric()) {
-                (true, _) => Some(*dictionary.get(&c).unwrap()),
-                (_, true) => Some(c),
-                (_, _) => None,
-            })
-            .enumerate()
-            .fold(String::new(), |mut acc, (i, c)| {
-                acc.push(c);
-                if (i + 1) % 5 == 0 {
-                    acc.push(' ');
-                }
-                acc
-            })
-            .trim()
-            .to_string())
+            .filter_map(|c| convert(c, &dictionary))
+            .collect::<Vec<_>>()
+            .chunks(5)
+            .map(|chunks| chunks.into_iter().collect::<String>())
+            .collect::<Vec<_>>()
+            .join(" "))
     })
 }
 
@@ -63,11 +52,15 @@ pub fn decode(ciphertext: &str, a: i32, b: i32) -> Result<String, AffineCipherEr
     make_dictionary(&a, &b, true).and_then(|dictionary| {
         Ok(ciphertext
             .chars()
-            .filter_map(|c| match (c.is_ascii_alphabetic(), c.is_numeric()) {
-                (true, _) => Some(*dictionary.get(&c).unwrap()),
-                (_, true) => Some(c),
-                (_, _) => None,
-            })
+            .filter_map(|c| convert(c, &dictionary))
             .collect::<String>())
     })
+}
+
+fn convert(c: char, dictionary: &HashMap<char, char>) -> Option<char> {
+    match (c.is_ascii_alphabetic(), c.is_numeric()) {
+        (true, _) => Some(*dictionary.get(&c).unwrap()),
+        (_, true) => Some(c),
+        (_, _) => None,
+    }
 }
