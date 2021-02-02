@@ -1,51 +1,69 @@
+use std::collections::HashSet;
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 pub struct Allergies {
-    allergies: Vec<Allergen>,
+    allergies: HashSet<Allergen>,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, EnumIter)]
 pub enum Allergen {
-    Eggs,
-    Peanuts,
-    Shellfish,
-    Strawberries,
-    Tomatoes,
-    Chocolate,
-    Pollen,
-    Cats,
+    Eggs = 1,
+    Peanuts = 2,
+    Shellfish = 4,
+    Strawberries = 8,
+    Tomatoes = 16,
+    Chocolate = 32,
+    Pollen = 64,
+    Cats = 128,
 }
 
 impl Allergies {
     pub fn new(score: u32) -> Self {
-        let allergies = convert_base10_to_base2(score).and_then(|score| {
-            println!("{:?}", score);
-            Ok(score
-                .into_iter()
-                .rev()
-                .enumerate()
-                .filter_map(|(i, s)| {
-                    println!("{}, {}", i, s);
-                    let allergen = match i {
-                        0 => Allergen::Eggs,
-                        1 => Allergen::Peanuts,
-                        2 => Allergen::Shellfish,
-                        3 => Allergen::Strawberries,
-                        4 => Allergen::Tomatoes,
-                        5 => Allergen::Chocolate,
-                        6 => Allergen::Pollen,
-                        7 => Allergen::Cats,
-                        _ => return None,
-                    };
-                    match s {
-                        0 => None,
-                        _ => Some(allergen),
-                    }
-                })
-                .collect::<Vec<Allergen>>())
-        });
-        println!("{:?}", allergies);
+        let allergies = Allergen::iter().fold(
+            (HashSet::new(), score),
+            |(mut allergies, rest_score), allergen: &Allergen| {
+                let value = *allergen as u32;
+                if value < rest_score {
+                    allergies.push(allergen);
+                    (allergies, rest_score - value)
+                } else {
+                    (allergies, rest_score)
+                }
+            },
+        );
         Self {
-            allergies: allergies.ok().unwrap(),
+            allergies: allergies.0,
         }
+        // let allergies = convert_base10_to_base2(score).and_then(|score| {
+        //     println!("{:?}", score);
+        //     Ok(score
+        //         .into_iter()
+        //         .rev()
+        //         .enumerate()
+        //         .filter_map(|(i, s)| {
+        //             println!("{}, {}", i, s);
+        //             let allergen = match i {
+        //                 0 => Allergen::Eggs,
+        //                 1 => Allergen::Peanuts,
+        //                 2 => Allergen::Shellfish,
+        //                 3 => Allergen::Strawberries,
+        //                 4 => Allergen::Tomatoes,
+        //                 5 => Allergen::Chocolate,
+        //                 6 => Allergen::Pollen,
+        //                 7 => Allergen::Cats,
+        //                 _ => return None,
+        //             };
+        //             match s {
+        //                 0 => None,
+        //                 _ => Some(allergen),
+        //             }
+        //         })
+        //         .collect::<Vec<Allergen>>())
+        // });
+        // println!("{:?}", allergies);
+        // Self {
+        //     allergies: allergies.ok().unwrap(),
+        // }
     }
 
     pub fn is_allergic_to(&self, allergen: &Allergen) -> bool {
