@@ -9,13 +9,12 @@ enum Pat {
     OnePair(Rank, Rank, Rank, Rank),
     TwoPair(Rank, Rank, Rank),
     ThreeCard(Rank, Rank, Rank),
-    LowestStraight,
     Straight(Rank),
     Flush(Rank),
     FullHouse(Rank, Rank),
     FourCard(Rank, Rank),
-    LowestStraighFlush,
     StraightFlush(Rank),
+    RoyalStraightFlush,
 }
 
 #[derive(Hash, Eq, PartialEq, PartialOrd, Debug, Clone, Copy, Ord)]
@@ -52,6 +51,26 @@ impl Rank {
             'Q' => Rank::QUEEN,
             'K' => Rank::KING,
             _ => panic!("Illegal char for rank"),
+        }
+    }
+}
+
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+enum Suit {
+    Heart,
+    Spade,
+    Diamond,
+    Club,
+}
+
+impl Suit {
+    fn new(c: char) -> Self {
+        match c {
+            'H' => Suit::Heart,
+            'S' => Suit::Spade,
+            'D' => Suit::Diamond,
+            'C' => Suit::Club,
+            _ => panic!(),
         }
     }
 }
@@ -107,8 +126,8 @@ fn analyze(hand: &str) -> Pat {
         (None, None, Some(two_card), _, _) if two_card.len() == 1 => {
             Pat::OnePair(two_card[0], kickers[0], kickers[1], kickers[2])
         }
+        (_, _, _, Some(Pat::Straight(n)), true) if n == Rank::ACE => Pat::RoyalStraightFlush,
         (_, _, _, Some(Pat::Straight(n)), true) => Pat::StraightFlush(n),
-        (_, _, _, Some(Pat::LowestStraight), true) => Pat::LowestStraighFlush,
         (_, _, _, Some(straight), false) => straight,
         (_, _, _, None, true) => Pat::Flush(kickers[0]),
         _ => Pat::HighCard(kickers[0], kickers[1], kickers[2], kickers[3], kickers[4]),
@@ -116,29 +135,24 @@ fn analyze(hand: &str) -> Pat {
 }
 
 fn straight(ranks: &Vec<Rank>) -> Option<Pat> {
-    match ranks.len() != 5 {
-        true => None,
-        _ => {
-            let mut lowest = false;
-            let result =
-                !ranks
-                    .windows(2)
-                    .map(|x| (x[0] as i32, x[1] as i32))
-                    .any(|(a, b)| match a - b {
-                        // In the case 'A' and '5'
-                        9 => {
-                            lowest = true;
-                            false
-                        }
-                        1 => false,
-                        _ => true,
-                    });
-            match (result, lowest) {
-                (false, _) => None,
-                (_, true) => Some(Pat::LowestStraight),
-                (_, false) => Some(Pat::Straight(ranks[0])),
-            }
+    if ranks.len() != 5 {
+        return None;
+    }
+
+    let mut lowest = false;
+    let result = !ranks.windows(2).any(|x| match x[0] as i32 - x[1] as i32 {
+        // In the case 'A' and '5'
+        9 => {
+            lowest = true;
+            false
         }
+        1 => false,
+        _ => true,
+    });
+    match (result, lowest) {
+        (true, true) => Some(Pat::Straight(Rank::FIVE)),
+        (true, false) => Some(Pat::Straight(ranks[0])),
+        _ => None,
     }
 }
 
@@ -163,15 +177,24 @@ fn count_rank(ranks: &Vec<Rank>) -> HashMap<u32, Vec<Rank>> {
 }
 
 fn ranks(cards: &Vec<&str>) -> Vec<Rank> {
-    fn rank(card: &&str) -> Rank {
-        Rank::new(card.chars().nth(0).unwrap())
+    fn rank(card: &&str) -> Option<Rank> {
+        match card.chars().nth(0) {
+            Some(value) => Some(Rank::new(value)),
+            _ => None,
+        }
     }
-    cards.into_iter().map(rank).sorted().rev().collect()
+    cards.into_iter().filter_map(rank).sorted().rev().collect()
 }
 
-fn suits(cards: &Vec<&str>) -> HashSet<char> {
-    fn suit(card: &&str) -> char {
-        card.chars().nth(card.len() - 1).unwrap()
+fn suits(cards: &Vec<&str>) -> HashSet<Suit> {
+    fn suit(card: &&str) -> Option<Suit> {
+        match card.chars().nth(card.len() - 1) {
+            Some(value) => Some(Suit::new(value)),
+            _ => None,
+        }
     }
-    cards.into_iter().map(suit).collect::<HashSet<char>>()
+    cards
+        .into_iter()
+        .filter_map(suit)
+        .collect::<HashSet<Suit>>()
 }
