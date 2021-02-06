@@ -1,4 +1,4 @@
-use rand::random;
+use rand::Rng;
 pub struct Robot {
     name: String,
 }
@@ -21,17 +21,17 @@ impl Robot {
 
 fn random_name() -> String {
     fn random_alphabet() -> char {
-        (b'A' + random::<u8>().rem_euclid(26)) as char
+        (b'A' + rand::thread_rng().gen_range(0..26) as u8) as char
     }
 
-    fn random_number() -> char {
-        (b'0' + random::<u8>().rem_euclid(10)) as char
+    fn random_number() -> String {
+        format!("{:03}", rand::thread_rng().gen_range(0..1000))
     }
 
-    (0..5)
-        .map(|idx| match idx {
-            0 | 1 => random_alphabet(),
-            _ => random_number(),
-        })
-        .collect::<String>()
+    format!(
+        "{}{}{}",
+        random_alphabet(),
+        random_alphabet(),
+        random_number()
+    )
 }
