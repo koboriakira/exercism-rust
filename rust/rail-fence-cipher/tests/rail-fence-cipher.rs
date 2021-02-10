@@ -37,14 +37,12 @@ fn test_encode_with_two_rails() {
 }
 
 #[test]
-#[ignore]
 /// encode with three rails
 fn test_encode_with_three_rails() {
     process_encode_case("WEAREDISCOVEREDFLEEATONCE", 3, "WECRLTEERDSOEEFEAOCAIVDEN");
 }
 
 #[test]
-#[ignore]
 /// encode with ending in the middle
 fn test_encode_with_ending_in_the_middle() {
     process_encode_case("EXERCISES", 4, "ESXIEECSR");
