@@ -2,9 +2,8 @@ use core::panic;
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 
-#[derive(Hash, Eq, PartialEq, PartialOrd, Debug, Clone, Copy)]
+#[derive(Hash, Eq, PartialEq, PartialOrd, Debug, Clone, Copy, Ord)]
 enum Pat {
-    INIT,
     HighCard(Rank, Rank, Rank, Rank, Rank),
     OnePair(Rank, Rank, Rank, Rank),
     TwoPair(Rank, Rank, Rank),
@@ -80,22 +79,17 @@ impl Suit {
 /// Note the type signature: this function should return _the same_ reference to
 /// the winning hand(s) as were passed in, not reconstructed strings which happen to be equal.
 pub fn winning_hands<'a>(hands: &[&'a str]) -> Option<Vec<&'a str>> {
-    let pat_as_hand = hands.iter().fold(HashMap::new(), |mut map, hand| {
+    let mut pat_as_hand = hands.iter().fold(HashMap::new(), |mut map, hand| {
         let pat = analyze(hand);
-        map.entry(pat).or_insert(vec![]).push(*hand);
+        map.entry(pat).or_insert_with(|| vec![]).push(*hand);
         map
     });
 
-    let strongest_pat = pat_as_hand
+    pat_as_hand
         .keys()
-        .fold(Pat::INIT, |a, b| match a.partial_cmp(b) {
-            Some(std::cmp::Ordering::Greater) => a,
-            Some(std::cmp::Ordering::Equal) => a,
-            Some(std::cmp::Ordering::Less) => *b,
-            _ => panic!(""),
-        });
-
-    Some(pat_as_hand.get(&strongest_pat).unwrap().clone())
+        .copied()
+        .max()
+        .and_then(|max| pat_as_hand.remove(&max))
 }
 
 fn analyze(hand: &str) -> Pat {
@@ -163,16 +157,25 @@ fn count_rank(ranks: &Vec<Rank>) -> HashMap<u32, Vec<Rank>> {
     ranks
         .into_iter()
         .fold(init, |mut acc, rank| {
-            *acc.entry(*rank).or_insert(0_u32) += 1_u32;
+            *acc.entry(*rank).or_insert_with(|| 0_u32) += 1_u32;
             acc
         })
         .iter()
         .fold(result_init, |mut acc, (rank, count)| {
-            acc.entry(*count).or_insert(vec![]).push(*rank);
+            acc.entry(*count).or_insert_with(|| vec![]).push(*rank);
             acc
         })
         .iter()
-        .map(|(k, v)| (*k, v.iter().sorted().rev().cloned().collect::<Vec<Rank>>()))
+        .map(|(k, v)| {
+            (
+                *k,
+                v.into_iter()
+                    .sorted()
+                    .rev()
+                    .map(|r| *r)
+                    .collect::<Vec<Rank>>(),
+            )
+        })
         .collect()
 }
 
