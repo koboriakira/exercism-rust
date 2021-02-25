@@ -64,6 +64,29 @@ impl Forth {
         self.stack.as_slice()
     }
 
+    pub fn pop(&mut self) -> Result<Value, Error> {
+        self.stack.pop().ok_or_else(|| Error::StackUnderflow)
+    }
+
+    pub fn push_multiple(&mut self, values: &[i32]) -> Result<(), Error> {
+        for value in values {
+            self.stack.push(*value);
+        }
+        Ok(())
+    }
+
+    pub fn push(&mut self, value: i32) -> Result<(), Error> {
+        self.stack.push(value);
+        Ok(())
+    }
+
+    pub fn close(&self) -> Result<(), Error> {
+        match self.mode_build_builtin {
+            true => Err(Error::InvalidWord),
+            _ => Ok(()),
+        }
+    }
+
     pub fn eval(&mut self, input: &str) -> ForthResult {
         input
             .to_lowercase()
@@ -84,8 +107,8 @@ impl Forth {
                             .clone()
                             .into_iter()
                             .enumerate()
-                            .try_for_each(|(idx, el)| match self.evaluate(&el) {
-                                Ok(element) => {
+                            .try_for_each(|(idx, el)| {
+                                self.evaluate(&el).and_then(|element| {
                                     println!("Buildin Element: {:?}", element);
                                     if idx == 0 {
                                         self.builtins
@@ -98,8 +121,7 @@ impl Forth {
                                         .or_insert_with(|| vec![])
                                         .push(element);
                                     Ok(())
-                                }
-                                Err(err) => Err(err),
+                                })
                             })
                             .and_then(|_| {
                                 self.mode_build_builtin = false;
@@ -117,10 +139,7 @@ impl Forth {
                     (false, el) => self.evaluate(el).and_then(|element| self.execute(element)),
                 }
             })
-            .and_then(|_| match self.mode_build_builtin {
-                true => Err(Error::InvalidWord),
-                _ => Ok(()),
-            })
+            .and_then(|_| self.close())
     }
 
     fn get_command_name(&mut self) -> Result<String, Error> {
@@ -141,38 +160,26 @@ impl Forth {
             Element::BuiltIn(elements) => elements
                 .into_iter()
                 .try_for_each(|element| self.execute(element.clone())),
-            element if element.needs_one_argument() => {
-                match (element, self.stack.pop()) {
-                    (Element::Duplicate, Some(val)) => {
-                        self.stack.push(val);
-                        self.stack.push(val);
-                    }
-                    (Element::Drop, Some(_)) => {}
-                    _ => return Err(Error::StackUnderflow),
-                };
-                Ok(())
-            }
-            element if element.needs_two_arguments() => {
-                match (element, self.stack.pop(), self.stack.pop()) {
-                    (Element::Add, Some(b), Some(a)) => self.stack.push(a + b),
-                    (Element::Subtract, Some(b), Some(a)) => self.stack.push(a - b),
-                    (Element::Multiply, Some(b), Some(a)) => self.stack.push(a * b),
-                    (Element::Divide, Some(0), Some(_)) => return Err(Error::DivisionByZero),
-                    (Element::Divide, Some(b), Some(a)) => self.stack.push(a / b),
-                    (Element::Swap, Some(b), Some(a)) => {
-                        self.stack.push(b);
-                        self.stack.push(a);
-                    }
-                    (Element::Over, Some(b), Some(a)) => {
-                        self.stack.push(a);
-                        self.stack.push(b);
-                        self.stack.push(a);
-                    }
-                    _ => return Err(Error::StackUnderflow),
-                }
-                Ok(())
-            }
-            _ => panic!(""),
+            element if element.needs_one_argument() => self.pop().and_then(|val| match element {
+                Element::Duplicate => self.push_multiple(&[val; 2]),
+                Element::Drop => Ok(()),
+                _ => unreachable!(),
+            }),
+            element if element.needs_two_arguments() => self.pop().and_then(|b| {
+                self.pop().and_then(|a| match element {
+                    Element::Add => self.push(a + b),
+                    Element::Subtract => self.push(a - b),
+                    Element::Multiply => self.push(a * b),
+                    Element::Divide => match b == 0 {
+                        true => Err(Error::DivisionByZero),
+                        false => self.push(a / b),
+                    },
+                    Element::Swap => self.push_multiple(&[b, a]),
+                    Element::Over => self.push_multiple(&[a, b, a]),
+                    _ => unreachable!(),
+                })
+            }),
+            _ => unreachable!(),
         }
     }
 
@@ -182,20 +189,18 @@ impl Forth {
         }
 
         match &el.to_lowercase()[..] {
-            "+" => return Ok(Element::Add),
-            "-" => return Ok(Element::Subtract),
-            "*" => return Ok(Element::Multiply),
-            "/" => return Ok(Element::Divide),
-            "dup" => return Ok(Element::Duplicate),
-            "drop" => return Ok(Element::Drop),
-            "swap" => return Ok(Element::Swap),
-            "over" => return Ok(Element::Over),
-            _ => {}
-        }
-
-        match convert_to_integer(el) {
-            Ok(num) => Ok(Element::Number(num)),
-            _ => Err(Error::UnknownWord),
+            "+" => Ok(Element::Add),
+            "-" => Ok(Element::Subtract),
+            "*" => Ok(Element::Multiply),
+            "/" => Ok(Element::Divide),
+            "dup" => Ok(Element::Duplicate),
+            "drop" => Ok(Element::Drop),
+            "swap" => Ok(Element::Swap),
+            "over" => Ok(Element::Over),
+            el => match convert_to_integer(el) {
+                Ok(num) => Ok(Element::Number(num)),
+                _ => Err(Error::UnknownWord),
+            },
         }
     }
 }
