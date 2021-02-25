@@ -101,35 +101,8 @@ impl Forth {
                         self.mode_build_builtin = true;
                         Ok(())
                     }
-                    // finish to create builtin
-                    (true, ";") => self.get_command_name().and_then(|command_name| {
-                        self.builtin_stack
-                            .clone()
-                            .into_iter()
-                            .enumerate()
-                            .try_for_each(|(idx, el)| {
-                                self.evaluate(&el).and_then(|element| {
-                                    println!("Buildin Element: {:?}", element);
-                                    if idx == 0 {
-                                        self.builtins
-                                            .entry(command_name.clone())
-                                            .or_insert_with(|| vec![])
-                                            .clear();
-                                    }
-                                    self.builtins
-                                        .entry(command_name.clone())
-                                        .or_insert_with(|| vec![])
-                                        .push(element);
-                                    Ok(())
-                                })
-                            })
-                            .and_then(|_| {
-                                self.mode_build_builtin = false;
-                                self.builtin_stack.clear();
-                                println!("Build built-in function: {:?}", self.builtins);
-                                Ok(())
-                            })
-                    }),
+                    // finish to create builtin and generate it
+                    (true, ";") => self.create_builtin(),
                     // stack for builtin
                     (true, el) => {
                         self.builtin_stack.push(el.to_string());
@@ -140,6 +113,37 @@ impl Forth {
                 }
             })
             .and_then(|_| self.close())
+    }
+
+    fn create_builtin(&mut self) -> Result<(), Error> {
+        self.get_command_name().and_then(|command_name| {
+            self.builtin_stack
+                .clone()
+                .into_iter()
+                .enumerate()
+                .try_for_each(|(idx, el)| {
+                    self.evaluate(&el).and_then(|element| {
+                        println!("Buildin Element: {:?}", element);
+                        if idx == 0 {
+                            self.builtins
+                                .entry(command_name.clone())
+                                .or_insert_with(|| vec![])
+                                .clear();
+                        }
+                        self.builtins
+                            .entry(command_name.clone())
+                            .or_insert_with(|| vec![])
+                            .push(element);
+                        Ok(())
+                    })
+                })
+                .and_then(|_| {
+                    self.mode_build_builtin = false;
+                    self.builtin_stack.clear();
+                    println!("Build built-in function: {:?}", self.builtins);
+                    Ok(())
+                })
+        })
     }
 
     fn get_command_name(&mut self) -> Result<String, Error> {
@@ -184,11 +188,10 @@ impl Forth {
     }
 
     fn evaluate(&self, el: &str) -> Result<Element, Error> {
-        if let Some(elements) = self.builtins.get(el) {
-            return Ok(Element::BuiltIn(elements.clone()));
-        }
-
-        match &el.to_lowercase()[..] {
+        match el {
+            el if self.builtins.get(el).is_some() => {
+                Ok(Element::BuiltIn(self.builtins.get(el).unwrap().clone()))
+            }
             "+" => Ok(Element::Add),
             "-" => Ok(Element::Subtract),
             "*" => Ok(Element::Multiply),
